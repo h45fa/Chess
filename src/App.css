@@ -41,6 +41,10 @@
   height: 100%;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
 .piece-container {
   cursor: grab;
   width: 100%;
@@ -53,4 +57,9 @@
 .piece {
   max-width: 70%;
   max-height: 70%;
+}
+
+.promote-square {
+  width: 50%;
+  height: 50%;
 }
