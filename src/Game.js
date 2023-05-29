@@ -1,17 +1,24 @@
 import * as ChessJS from "chess.js";
 import { BehaviorSubject } from "rxjs";
 
-let promotion = "rnb2bnr/pppPkppp/8/4p3/7q/8/PPPP1PPP/RNBQKBNR w KQ - 1 5";
-
 const Chess = typeof ChessJS === "function" ? ChessJS : ChessJS.Chess;
-const chess = new Chess(promotion);
+const chess = new Chess();
 
 export const gameSubject = new BehaviorSubject({
   board: chess.board(),
 });
 
 export function initGame() {
-  updateGame();
+  const savedGame = localStorage.getItem('savedGame')
+  if (savedGame) {
+      chess.load(savedGame)
+  }
+  updateGame()
+}
+
+export function resetGame() {
+  chess.reset()
+  updateGame()
 }
 
 export function handleMove(from, to) {
@@ -40,9 +47,36 @@ export function move(from, to, promotion) {
 }
 
 function updateGame(pendingPromotion) {
+  const isGameOver = chess.isGameOver()
+
   const newGame = {
-    board: chess.board(),
-    pendingPromotion,
-  };
-  gameSubject.next(newGame);
+      board: chess.board(),
+      pendingPromotion,
+      isGameOver,
+      turn: chess.turn(),
+      result: isGameOver ? getGameResult() : null
+  }
+
+  localStorage.setItem('savedGame', chess.fen())
+
+  gameSubject.next(newGame)
+}
+
+function getGameResult() {
+  if (chess.in_checkmate()) {
+      const winner = chess.turn() === "w" ? 'BLACK' : 'WHITE'
+      return `CHECKMATE - WINNER - ${winner}`
+  } else if (chess.in_draw()) {
+      let reason = '50 - MOVES - RULE'
+      if (chess.in_stalemate()) {
+          reason = 'STALEMATE'
+      } else if (chess.in_threefold_repetition()) {
+          reason = 'REPETITION'
+      } else if (chess.insufficient_material()) {
+          reason = "INSUFFICIENT MATERIAL"
+      }
+      return `DRAW - ${reason}`
+  } else {
+      return 'UNKNOWN REASON'
+  }
 }
